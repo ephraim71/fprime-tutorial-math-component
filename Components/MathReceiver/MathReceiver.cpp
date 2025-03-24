@@ -8,6 +8,13 @@
 #include <Components/MathReceiver/MathReceiver.hpp>
 #include <FpConfig.hpp>
 
+
+#include <iostream>
+#include <chrono>
+#include <iomanip>  // Required for std::put_time
+
+#include <ctime>
+
 namespace MathModule {
 
   // ----------------------------------------------------------------------
@@ -18,7 +25,7 @@ namespace MathModule {
     MathReceiver(
         const char *const compName
     ) : MathReceiverComponentBase(compName),
-        numMathOps(0) 
+        numMathOps(0)
   {
 
   }
@@ -55,15 +62,15 @@ namespace MathModule {
             break;
         case MathOp::DIV:
             if ( val2 == 0 ){
-              this->log_ACTIVITY_HI_DIVIDE_BY_ZERO(); 
-              break; 
+              this->log_ACTIVITY_HI_DIVIDE_BY_ZERO();
+              break;
             }
             res = val1 / val2;
             break;
         default:
             FW_ASSERT(0, op.e);
             break;
-    }//end switch 
+    }//end switch
 
     // Get the factor value
     Fw::ParamValid valid;
@@ -76,13 +83,13 @@ namespace MathModule {
     // Multiply result by factor
     res *= factor;
 
-    // Increment number of math ops 
-    numMathOps++;  
+    // Increment number of math ops
+    numMathOps++;
 
     // Emit telemetry and events
     this->log_ACTIVITY_HI_OPERATION_PERFORMED(op);
     this->tlmWrite_OPERATION(op);
-    this->tlmWrite_NUMBER_OF_OPS(numMathOps); 
+    this->tlmWrite_NUMBER_OF_OPS(numMathOps);
 
     // Emit result
     this->mathResultOut_out(0, res);
@@ -95,6 +102,23 @@ namespace MathModule {
         U32 context
     )
   {
+
+      auto now = std::chrono::system_clock::now();
+
+      // Convert to a time_t to print the human-readable part
+      auto now_time_t = std::chrono::system_clock::to_time_t(now);
+
+      // Get nanoseconds since the last second
+      auto now_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(now.time_since_epoch()) % 1000000000;
+
+      // Convert to local time
+      std::tm local_tm = *std::localtime(&now_time_t);
+
+      // Print time with nanosecond resolution
+      std::cout << std::put_time(&local_tm, "%Y-%m-%d %H:%M:%S")
+                << "." << now_ns.count() << " ns" << std::endl;
+
+
    U32 numMsgs = this->m_queue.getMessagesAvailable();
     for (U32 i = 0; i < numMsgs; ++i) {
         (void) this->doDispatch();
@@ -119,7 +143,7 @@ namespace MathModule {
     this->cmdResponse_out(opCode, cmdSeq, Fw::CmdResponse::OK);
   }
 
-  // Parameter Checker 
+  // Parameter Checker
 
   // In: MathReceiver.cpp
   void MathReceiver ::
